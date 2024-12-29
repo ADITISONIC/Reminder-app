@@ -42,26 +42,32 @@ function App() {
     }
   };
 
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch("http://localhost:5001/api/events", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Use the correct Authorization header format
-        },
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setEvents(data); // Set the fetched events in the state
-      } else {
-        alert(data.message || "Failed to fetch events");
-      }
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      alert("An error occurred while fetching events.");
+const fetchEvents = async () => {
+  try {
+    const token = localStorage.getItem("token"); // Get token from storage
+    if (!token) {
+      throw new Error("Token not found. Please log in again.");
     }
-  };
+
+    const response = await fetch("http://localhost:5001/api/events", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // Add Bearer token here
+      },
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      setEvents(data); // Set events in state
+    } else {
+      alert(data.message || "Failed to fetch events");
+    }
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    alert(error.message || "An error occurred while fetching events.");
+  }
+};
 
   const handleAddEvent = async () => {
     if (newEvent && newDate && eventDescription) {
@@ -102,10 +108,16 @@ function App() {
 
   const handleDeleteEvent = async (id) => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Token not found. Please log in again.");
+      }
+
       const response = await fetch(`http://localhost:5001/api/events/${id}`, {
         method: "DELETE",
         headers: {
-          "x-auth-token": localStorage.getItem("token"),
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Use Bearer token here
         },
       });
 
@@ -114,7 +126,7 @@ function App() {
         setEvents((prevEvents) =>
           prevEvents.filter((event) => event._id !== id)
         );
-        alert(data.message || "Event deleted");
+        alert(data.message || "Event deleted successfully");
       } else {
         alert(data.message || "Failed to delete event");
       }

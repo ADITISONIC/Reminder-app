@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Middleware to verify token
 const verifyToken = (req, res, next) => {
-  const token = req.headers["x-auth-token"];
+  const token = req.headers["authorization"]?.split(" ")[1]; 
   if (!token)
     return res.status(401).json({ message: "No token, authorization denied" });
 
@@ -45,9 +45,10 @@ router.post("/add", verifyToken, async (req, res) => {
   }
 });
 // Get Events
+// Get Events
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const events = await Event.find({ createdBy: req.user }).sort({ date: 1 });
+    const events = await Event.find().sort({ date: 1 }); // Remove the filter on createdBy
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -55,16 +56,27 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // Delete Event
+// Delete Event
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const event = await Event.findByIdAndDelete(req.params.id);
+    // Find the event by ID
+    const event = await Event.findById(req.params.id);
+
+    // If the event doesn't exist
     if (!event) {
       return res.status(404).json({ message: "Event not found" });
     }
+
+    // Check if the event was created by the logged-in user
+    if (event.createdBy.toString() !== req.user.toString()) {
+      return res.status(403).json({ message: "You do not have permission to delete this event" });
+    }
+
+    // If the event was created by the logged-in user, delete it
+    await Event.findByIdAndDelete(req.params.id);
     res.json({ message: "Event deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 module.exports = router;

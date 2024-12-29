@@ -2,37 +2,23 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 
 // Register a new user
 router.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Check if the user already exists
-    const userExists = await User.findOne({ username });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    // Hash the password with bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Hash the password before saving it
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Save the user to the database
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
 
-    // Create a new user with the hashed password
-    const user = new User({
-      username,
-      password: hashedPassword,
-    });
-
-    await user.save();
-
-    res.status(201).json({
-      _id: user._id,
-      username: user.username,
-    });
+    res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
-    res.status(500).json({ message: "Error registering user", error });
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -45,42 +31,90 @@ router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(401).json({ message: "User not found" }); // Use 401 for Unauthorized
+      return res.status(400).json({ message: "User not found" });
+    }
+    
+   console.log("Plain password provided:", password);
+   console.log("Hashed password in DB:", user.password);
+
+    try {
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: "Invalid credentials" });
+      }
+    } catch (error) {
+      console.error("Error comparing passwords:", error);
+      return res.status(500).json({ message: "Server error" });
     }
 
-    // Verify the password (assuming you're using bcrypt)
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid credentials" }); // Use 401 for invalid credentials
-    }
-
-    // Create JWT token and include username
     const token = jwt.sign(
-      { id: user._id, username: user.username }, // Include username here
-      process.env.JWT_SECRET,
+      { id: user._id, username: user.username },
+      process.env.JWT_SECRET, // Ensure this has a value
       { expiresIn: "1h" }
     );
 
-    res.json({ message: "Login successful", token }); // Send both message and token
+    res.json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+const testPasswordComparison = async () => {
+  const plainPassword = "Prathishaditi@2930";
+  const hashedPassword =
+    "$2a$10$JcoIKK0cECmtOyOKazTjcO4D8OgfdPoI1bQL.YM3OwKpCqle8hyAi";
+
+  const isValid = await bcrypt.compare(plainPassword, hashedPassword);
+  console.log("Password Match:", isValid);
+};
+
+testPasswordComparison();
+router.post("/refresh", async (req, res) => {
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(403).json({ message: "Refresh token required" });
+  }
+
+  try {
+    // Verify refresh token
+    const verified = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Create a new access token
+    const accessToken = jwt.sign(
+      { id: verified.id, username: verified.username },
+      process.env.JWT_SECRET,
+     
+    );
+
+    res.json({ accessToken });
+  } catch (error) {
+    res.status(403).json({ message: "Invalid refresh token" });
   }
 });
 // Middleware to authenticate token
 const authenticateToken = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
+  const authHeader = req.header("Authorization");
+  const token = authHeader && authHeader.split(" ")[1];
+  console.log("Received token:", token);
+   
   if (!token) {
     return res.status(401).json({ message: "No token provided" });
   }
 
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
+     console.log("Verified token payload:", verified);
     req.user = verified;
     next();
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token has expired" });
+    }
     res.status(403).json({ message: "Invalid token" });
   }
 };
+
 
 // Export only the router by default and the authenticateToken separately
 module.exports = { router, authenticateToken };
