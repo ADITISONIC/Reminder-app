@@ -113,7 +113,7 @@ h1 {
   animation: popIn 1s ease-in-out;
 }
 
-.event-username[data-username="aditi"] {
+.event-username[data-username="user1"] {
   background-color: #237cfa;
 }
 
