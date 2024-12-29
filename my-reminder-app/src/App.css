@@ -1,0 +1,39 @@
+.app {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+.event-form {
+  margin-bottom: 20px;
+}
+
+.event-form input, .event-form select, .event-form button {
+  margin: 5px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.event-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.event-card {
+  width: 250px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  text-align: left;
+}
+
+.event-card button {
+  background-color: #FF5C5C;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
