@@ -9,35 +9,36 @@ function App() {
   const [events, setEvents] = useState([]);
   const [newEvent, setNewEvent] = useState("");
   const [newDate, setNewDate] = useState("");
-  const [addedBy, setAddedBy] = useState("");
   const [eventDescription, setEventDescription] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1); // Current page
-  const itemsPerPage = 15; // Items per page
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
-  };
 
   const onLogin = async (username, password) => {
     try {
       const response = await fetch("http://localhost:5001/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
       if (response.ok) {
+        console.log("Login successful:", data);
+
+        // Store the token and username in localStorage
         localStorage.setItem("token", data.token);
+        localStorage.setItem("username", username); // Store the username
+
         setIsLoggedIn(true);
-        fetchEvents();
+        alert("Login successful!");
+
+        fetchEvents(); // Fetch events after login
       } else {
         alert(data.message || "Login failed");
       }
     } catch (error) {
-      alert("An error occurred while logging in.");
+      console.error("Error during login:", error);
+      alert("An error occurred while logging in");
     }
   };
 
@@ -45,27 +46,29 @@ function App() {
     try {
       const response = await fetch("http://localhost:5001/api/events", {
         method: "GET",
-        headers: { "x-auth-token": localStorage.getItem("token") },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // Use the correct Authorization header format
+        },
       });
 
       const data = await response.json();
       if (response.ok) {
-        setEvents(data);
+        setEvents(data); // Set the fetched events in the state
       } else {
-        alert(data.message || "Failed to fetch events.");
+        alert(data.message || "Failed to fetch events");
       }
     } catch (error) {
+      console.error("Error fetching events:", error);
       alert("An error occurred while fetching events.");
     }
   };
 
   const handleAddEvent = async () => {
-    if (newEvent && newDate && addedBy && eventDescription) {
+    if (newEvent && newDate && eventDescription) {
       const event = {
         eventName: newEvent,
         date: newDate,
-        addedBy,
-        description: eventDescription,
+        description: eventDescription, // Send description as well
       };
 
       try {
@@ -73,22 +76,23 @@ function App() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-auth-token": localStorage.getItem("token"),
+            "x-auth-token": localStorage.getItem("token"), // Ensure the token is included
           },
           body: JSON.stringify(event),
         });
 
         const data = await response.json();
         if (response.ok) {
+          // Update the events state with the response from the server
           setEvents((prevEvents) => [...prevEvents, data]);
           setNewEvent("");
           setNewDate("");
-          setAddedBy("");
           setEventDescription("");
         } else {
-          alert(data.message || "Failed to add event.");
+          alert(data.message || "Failed to add event");
         }
       } catch (error) {
+        console.error("Error while adding event:", error);
         alert("An error occurred while adding the event.");
       }
     } else {
@@ -100,54 +104,31 @@ function App() {
     try {
       const response = await fetch(`http://localhost:5001/api/events/${id}`, {
         method: "DELETE",
-        headers: { "x-auth-token": localStorage.getItem("token") },
+        headers: {
+          "x-auth-token": localStorage.getItem("token"),
+        },
       });
 
+      const data = await response.json();
       if (response.ok) {
         setEvents((prevEvents) =>
           prevEvents.filter((event) => event._id !== id)
         );
+        alert(data.message || "Event deleted");
       } else {
-        alert("Failed to delete event.");
+        alert(data.message || "Failed to delete event");
       }
     } catch (error) {
+      console.error("Error deleting event:", error);
       alert("An error occurred while deleting the event.");
     }
   };
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchEvents();
+      fetchEvents(); // Fetch events when the user is logged in
     }
   }, [isLoggedIn]);
-
-  const filteredEvents = events.filter(
-    (event) =>
-      event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      formatDate(event.date).includes(searchQuery)
-  );
-
-  // Pagination logic
-  const indexOfLastEvent = currentPage * itemsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - itemsPerPage;
-  const currentEvents = filteredEvents.slice(
-    indexOfFirstEvent,
-    indexOfLastEvent
-  );
-
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const previousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={onLogin} />;
@@ -159,53 +140,28 @@ function App() {
         <h1>Reminder Website</h1>
         <Navbar />
 
-        <input
-          type="text"
-          placeholder="Search by Event Name or Date"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-bar"
-        />
-
         <Routes>
           <Route
             path="/"
             element={
               <div className="events">
-                {currentEvents.map((event) => (
-                  <div className="event-card" key={event._id}>
-                    <div className="event-header">
-                      <span className="event-date">
-                        {formatDate(event.date)}
-                      </span>
-                      <span className="event-added-by">{event.addedBy}</span>
+                {events
+                  .sort((a, b) => new Date(a.date) - new Date(b.date))
+                  .map((event) => (
+                    <div key={event._id} className="event-card">
+                      <div className="event-header">
+                        <span className="event-date">
+                          {new Date(event.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3>{event.eventName}</h3>
+                      <p>{event.description}</p>
+                      <p>Uploaded by: {event.uploadedBy || "Unknown"}</p>
+                      <button onClick={() => handleDeleteEvent(event._id)}>
+                        Delete
+                      </button>
                     </div>
-                    <h3>{event.eventName}</h3>
-                    <p>{event.description}</p>
-                    <button onClick={() => handleDeleteEvent(event._id)}>
-                      Delete
-                    </button>
-                  </div>
-                ))}
-                <div className="pagination">
-                  <button
-                    onClick={previousPage}
-                    disabled={currentPage === 1}
-                    className="page-button"
-                  >
-                    Previous
-                  </button>
-                  <span>
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === totalPages}
-                    className="page-button"
-                  >
-                    Next
-                  </button>
-                </div>
+                  ))}
               </div>
             }
           />
@@ -229,14 +185,6 @@ function App() {
                   value={eventDescription}
                   onChange={(e) => setEventDescription(e.target.value)}
                 />
-                <select
-                  value={addedBy}
-                  onChange={(e) => setAddedBy(e.target.value)}
-                >
-                  <option value="">Added By</option>
-                  <option value="Me">Me</option>
-                  <option value="Friend">Friend</option>
-                </select>
                 <button onClick={handleAddEvent}>Add Event</button>
               </div>
             }

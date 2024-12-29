@@ -1,29 +1,15 @@
 const mongoose = require("mongoose");
 
 const eventSchema = new mongoose.Schema({
-  eventName: {
-    type: String,
-    required: true,
-  },
-  date: {
-    type: Date,
-    required: true,
-  },
-  addedBy: {
-    type: String,
-    required: true,
-  },
+  eventName: { type: String, required: true },
+  date: { type: Date, required: true },
+  description: { type: String },
+  uploadedBy: { type: String, required: false }, // This field is optional since it will be set automatically in the backend
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Reference to the User model
+    ref: "User",
     required: true,
-  },
-  description: {
-    type: String,
-    required: false,
   },
 });
 
-const Event = mongoose.model("Event", eventSchema);
-
-module.exports = Event;
+module.exports = mongoose.model("Event", eventSchema);

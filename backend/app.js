@@ -10,6 +10,13 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Allow requests from your frontend's URL
+    methods: ["GET", "POST", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 // Routes
 const authRoutes = require("./routes/auth").router; // Ensure you're accessing the router from the auth module
 const eventRoutes = require("./routes/events"); // Assuming `events.js` exports a router

@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 
-const EventForm = ({ onAddEvent }) => {
+const EventForm = ({ onAddEvent, username }) => {
+  const [eventName, setEventName] = useState("");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
-  const [addedBy, setAddedBy] = useState(""); // "me" or "friend"
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (date && description && addedBy) {
-      onAddEvent({ date, description, addedBy });
+    if (eventName && date && description) {
+      onAddEvent({ eventName, date, description, uploadedBy: username });
+      setEventName("");
       setDate("");
       setDescription("");
-      setAddedBy("");
     } else {
       alert("Please fill all fields!");
     }
@@ -19,6 +19,13 @@ const EventForm = ({ onAddEvent }) => {
 
   return (
     <form className="event-form" onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Event Name"
+        value={eventName}
+        onChange={(e) => setEventName(e.target.value)}
+        required
+      />
       <input
         type="date"
         value={date}
@@ -32,15 +39,6 @@ const EventForm = ({ onAddEvent }) => {
         onChange={(e) => setDescription(e.target.value)}
         required
       />
-      <select
-        value={addedBy}
-        onChange={(e) => setAddedBy(e.target.value)}
-        required
-      >
-        <option value="">Who added?</option>
-        <option value="me">Me</option>
-        <option value="friend">Friend</option>
-      </select>
       <button type="submit">Add Event</button>
     </form>
   );

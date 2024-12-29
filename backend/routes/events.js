@@ -13,28 +13,29 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded.id;
+    req.username = decoded.username; // Add the username to the request
     next();
   } catch (error) {
     res.status(400).json({ message: "Token is not valid" });
   }
 };
 
-// Add Event
-// Add Event (Updated to include description)
 router.post("/add", verifyToken, async (req, res) => {
   try {
-    const { eventName, date, addedBy, description } = req.body;
+    const { eventName, date, description } = req.body;
 
-    if (!eventName || !date || !addedBy) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!eventName || !date) {
+      return res
+        .status(400)
+        .json({ message: "Event name and date are required" });
     }
 
     const newEvent = new Event({
       eventName,
       date,
-      addedBy,
-      createdBy: req.user,
-      description,  // Added description if provided
+      description,
+      uploadedBy: req.username, // Use the username from the token
+      createdBy: req.user, // User ID stored in createdBy
     });
 
     await newEvent.save();
@@ -43,7 +44,6 @@ router.post("/add", verifyToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 // Get Events
 router.get("/", verifyToken, async (req, res) => {
   try {
@@ -57,7 +57,10 @@ router.get("/", verifyToken, async (req, res) => {
 // Delete Event
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    await Event.findByIdAndDelete(req.params.id);
+    const event = await Event.findByIdAndDelete(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
     res.json({ message: "Event deleted" });
   } catch (error) {
     res.status(500).json({ message: error.message });
