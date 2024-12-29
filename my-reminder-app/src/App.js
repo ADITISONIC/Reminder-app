@@ -11,36 +11,33 @@ function App() {
   const [newDate, setNewDate] = useState("");
   const [addedBy, setAddedBy] = useState("");
   const [eventDescription, setEventDescription] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const itemsPerPage = 15; // Items per page
 
-  // Format the date to a more readable format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(); // Customize date format as needed
+    return date.toLocaleDateString();
   };
 
   const onLogin = async (username, password) => {
     try {
       const response = await fetch("http://localhost:5001/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
       if (response.ok) {
-        console.log("Login successful:", data);
         localStorage.setItem("token", data.token);
         setIsLoggedIn(true);
-        alert("Login successful!");
-        fetchEvents(); // Fetch events after login
+        fetchEvents();
       } else {
         alert(data.message || "Login failed");
       }
     } catch (error) {
-      console.error("Error during login:", error);
-      alert("An error occurred while logging in");
+      alert("An error occurred while logging in.");
     }
   };
 
@@ -48,19 +45,16 @@ function App() {
     try {
       const response = await fetch("http://localhost:5001/api/events", {
         method: "GET",
-        headers: {
-          "x-auth-token": localStorage.getItem("token"),
-        },
+        headers: { "x-auth-token": localStorage.getItem("token") },
       });
 
       const data = await response.json();
       if (response.ok) {
-        setEvents(data); // Set the fetched events in the state
+        setEvents(data);
       } else {
-        alert(data.message || "Failed to fetch events");
+        alert(data.message || "Failed to fetch events.");
       }
     } catch (error) {
-      console.error("Error fetching events:", error);
       alert("An error occurred while fetching events.");
     }
   };
@@ -71,7 +65,7 @@ function App() {
         eventName: newEvent,
         date: newDate,
         addedBy,
-        description: eventDescription, // Send description as well
+        description: eventDescription,
       };
 
       try {
@@ -79,24 +73,22 @@ function App() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-auth-token": localStorage.getItem("token"), // Ensure the token is included
+            "x-auth-token": localStorage.getItem("token"),
           },
           body: JSON.stringify(event),
         });
 
         const data = await response.json();
         if (response.ok) {
-          // Update the events state with the response from the server
           setEvents((prevEvents) => [...prevEvents, data]);
           setNewEvent("");
           setNewDate("");
           setAddedBy("");
           setEventDescription("");
         } else {
-          alert(data.message || "Failed to add event");
+          alert(data.message || "Failed to add event.");
         }
       } catch (error) {
-        console.error("Error while adding event:", error);
         alert("An error occurred while adding the event.");
       }
     } else {
@@ -108,31 +100,54 @@ function App() {
     try {
       const response = await fetch(`http://localhost:5001/api/events/${id}`, {
         method: "DELETE",
-        headers: {
-          "x-auth-token": localStorage.getItem("token"),
-        },
+        headers: { "x-auth-token": localStorage.getItem("token") },
       });
 
-      const data = await response.json();
       if (response.ok) {
         setEvents((prevEvents) =>
           prevEvents.filter((event) => event._id !== id)
         );
-        alert(data.message || "Event deleted");
       } else {
-        alert(data.message || "Failed to delete event");
+        alert("Failed to delete event.");
       }
     } catch (error) {
-      console.error("Error deleting event:", error);
       alert("An error occurred while deleting the event.");
     }
   };
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchEvents(); // Fetch events when the user is logged in
+      fetchEvents();
     }
   }, [isLoggedIn]);
+
+  const filteredEvents = events.filter(
+    (event) =>
+      event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      formatDate(event.date).includes(searchQuery)
+  );
+
+  // Pagination logic
+  const indexOfLastEvent = currentPage * itemsPerPage;
+  const indexOfFirstEvent = indexOfLastEvent - itemsPerPage;
+  const currentEvents = filteredEvents.slice(
+    indexOfFirstEvent,
+    indexOfLastEvent
+  );
+
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const previousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={onLogin} />;
@@ -144,33 +159,53 @@ function App() {
         <h1>Reminder Website</h1>
         <Navbar />
 
+        <input
+          type="text"
+          placeholder="Search by Event Name or Date"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="search-bar"
+        />
+
         <Routes>
           <Route
             path="/"
             element={
               <div className="events">
-                {events
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .map((event) => (
-                    <div
-                      className={`event-card ${
-                        event.addedBy === "Me" ? "my-event" : "friend-event"
-                      }`}
-                      key={event._id}
-                    >
-                      <div className="event-header">
-                        <span className="event-date">
-                          {formatDate(event.date)}
-                        </span>
-                        <span className="event-added-by">{event.addedBy}</span>
-                      </div>
-                      <h3>{event.eventName}</h3>
-                      <p>{event.description}</p>
-                      <button onClick={() => handleDeleteEvent(event._id)}>
-                        Delete
-                      </button>
+                {currentEvents.map((event) => (
+                  <div className="event-card" key={event._id}>
+                    <div className="event-header">
+                      <span className="event-date">
+                        {formatDate(event.date)}
+                      </span>
+                      <span className="event-added-by">{event.addedBy}</span>
                     </div>
-                  ))}
+                    <h3>{event.eventName}</h3>
+                    <p>{event.description}</p>
+                    <button onClick={() => handleDeleteEvent(event._id)}>
+                      Delete
+                    </button>
+                  </div>
+                ))}
+                <div className="pagination">
+                  <button
+                    onClick={previousPage}
+                    disabled={currentPage === 1}
+                    className="page-button"
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className="page-button"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             }
           />
