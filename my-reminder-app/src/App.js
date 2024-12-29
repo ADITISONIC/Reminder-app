@@ -1,17 +1,22 @@
-// src/App.js
-
-import React, { useState } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Import Router and Routes
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import LoginPage from "./components/LoginPage";
 import Navbar from "./components/Navbar";
 import "./App.css";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [events, setEvents] = useState([]);
   const [newEvent, setNewEvent] = useState("");
   const [newDate, setNewDate] = useState("");
   const [addedBy, setAddedBy] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+
+  // Format the date to a more readable format
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(); // Customize date format as needed
+  };
 
   const onLogin = async (username, password) => {
     try {
@@ -29,6 +34,7 @@ function App() {
         localStorage.setItem("token", data.token);
         setIsLoggedIn(true);
         alert("Login successful!");
+        fetchEvents(); // Fetch events after login
       } else {
         alert(data.message || "Login failed");
       }
@@ -38,21 +44,95 @@ function App() {
     }
   };
 
-  const handleAddEvent = () => {
-    if (newEvent && newDate && addedBy) {
-      const event = { event: newEvent, date: newDate, addedBy };
-      setEvents((prevEvents) => [...prevEvents, event]);
-      setNewEvent("");
-      setNewDate("");
-      setAddedBy("");
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/api/events", {
+        method: "GET",
+        headers: {
+          "x-auth-token": localStorage.getItem("token"),
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setEvents(data); // Set the fetched events in the state
+      } else {
+        alert(data.message || "Failed to fetch events");
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      alert("An error occurred while fetching events.");
+    }
+  };
+
+  const handleAddEvent = async () => {
+    if (newEvent && newDate && addedBy && eventDescription) {
+      const event = {
+        eventName: newEvent,
+        date: newDate,
+        addedBy,
+        description: eventDescription, // Send description as well
+      };
+
+      try {
+        const response = await fetch("http://localhost:5001/api/events/add", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": localStorage.getItem("token"), // Ensure the token is included
+          },
+          body: JSON.stringify(event),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          // Update the events state with the response from the server
+          setEvents((prevEvents) => [...prevEvents, data]);
+          setNewEvent("");
+          setNewDate("");
+          setAddedBy("");
+          setEventDescription("");
+        } else {
+          alert(data.message || "Failed to add event");
+        }
+      } catch (error) {
+        console.error("Error while adding event:", error);
+        alert("An error occurred while adding the event.");
+      }
     } else {
       alert("Please fill out all fields.");
     }
   };
 
-  const handleDeleteEvent = (index) => {
-    setEvents((prevEvents) => prevEvents.filter((_, i) => i !== index));
+  const handleDeleteEvent = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/events/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-auth-token": localStorage.getItem("token"),
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setEvents((prevEvents) =>
+          prevEvents.filter((event) => event._id !== id)
+        );
+        alert(data.message || "Event deleted");
+      } else {
+        alert(data.message || "Failed to delete event");
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("An error occurred while deleting the event.");
+    }
   };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchEvents(); // Fetch events when the user is logged in
+    }
+  }, [isLoggedIn]);
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={onLogin} />;
@@ -71,17 +151,22 @@ function App() {
               <div className="events">
                 {events
                   .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .map((event, index) => (
+                  .map((event) => (
                     <div
                       className={`event-card ${
                         event.addedBy === "Me" ? "my-event" : "friend-event"
                       }`}
-                      key={index}
+                      key={event._id}
                     >
-                      <h3>{event.event}</h3>
-                      <p>Date: {event.date}</p>
-                      <p>Added By: {event.addedBy}</p>
-                      <button onClick={() => handleDeleteEvent(index)}>
+                      <div className="event-header">
+                        <span className="event-date">
+                          {formatDate(event.date)}
+                        </span>
+                        <span className="event-added-by">{event.addedBy}</span>
+                      </div>
+                      <h3>{event.eventName}</h3>
+                      <p>{event.description}</p>
+                      <button onClick={() => handleDeleteEvent(event._id)}>
                         Delete
                       </button>
                     </div>
@@ -103,6 +188,11 @@ function App() {
                   type="date"
                   value={newDate}
                   onChange={(e) => setNewDate(e.target.value)}
+                />
+                <textarea
+                  placeholder="Event Description"
+                  value={eventDescription}
+                  onChange={(e) => setEventDescription(e.target.value)}
                 />
                 <select
                   value={addedBy}

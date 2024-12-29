@@ -20,15 +20,23 @@ const verifyToken = (req, res, next) => {
 };
 
 // Add Event
+// Add Event (Updated to include description)
 router.post("/add", verifyToken, async (req, res) => {
   try {
-    const { eventName, date, addedBy } = req.body;
+    const { eventName, date, addedBy, description } = req.body;
+
+    if (!eventName || !date || !addedBy) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
     const newEvent = new Event({
       eventName,
       date,
       addedBy,
       createdBy: req.user,
+      description,  // Added description if provided
     });
+
     await newEvent.save();
     res.status(201).json(newEvent);
   } catch (error) {

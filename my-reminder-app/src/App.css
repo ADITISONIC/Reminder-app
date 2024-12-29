@@ -1,39 +1,190 @@
-.app {
-  text-align: center;
+/* Reset default margin and padding */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Basic body styling */
+body {
   font-family: Arial, sans-serif;
-  margin: 20px;
+  background-color: #f4f4f4;
+  color: #333;
+  padding: 20px;
 }
 
-.event-form {
+/* Main app container */
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Heading */
+h1 {
+  text-align: center;
+  color: #333;
   margin-bottom: 20px;
+  font-size: 2.5rem;
 }
 
-.event-form input, .event-form select, .event-form button {
-  margin: 5px;
-  padding: 10px;
-  font-size: 16px;
-}
-
-.event-list {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-}
-
+/* Event Cards */
 .event-card {
-  width: 250px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  text-align: left;
+  background-color: #fff;
+  padding: 20px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+}
+
+.event-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.event-card p {
+  margin-bottom: 10px;
+}
+
+.event-card .event-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.event-card .event-date {
+  font-weight: bold;
+  color: #f0ad4e;
+}
+
+.event-card .event-added-by {
+  font-weight: bold;
 }
 
 .event-card button {
-  background-color: #FF5C5C;
+  background-color: #ff5c5c;
   color: white;
   border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
+  padding: 8px 12px;
+  border-radius: 4px;
   cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.event-card button:hover {
+  background-color: #ff3e3e;
+}
+
+/* My Event Background Color */
+.my-event {
+  background-color: #237cfa;
+  color: white;
+}
+
+/* Friend Event Background Color */
+.friend-event {
+  background-color: #028A0F;
+  color: white;
+}
+
+/* Input section */
+.input-section {
+  background-color: #fafafa;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 20px 0;
+}
+
+.input-section input,
+.input-section textarea,
+.input-section select,
+.input-section button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.input-section textarea {
+  resize: vertical;
+  height: 100px;
+}
+
+.input-section button {
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+
+.input-section button:hover {
+  background-color: #0056b3;
+}
+
+/* Navbar */
+nav {
+  background-color: #333;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-radius: 8px;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  margin: 0 20px;
+  padding: 10px 20px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+nav a:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+nav a.active {
+  background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  nav a {
+    margin: 10px 0;
+    width: 100%;
+    text-align: center;
+  }
+
+  .input-section {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .event-card {
+    padding: 15px;
+  }
 }

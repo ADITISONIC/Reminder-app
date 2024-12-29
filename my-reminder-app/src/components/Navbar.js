@@ -1,13 +1,30 @@
-// src/components/Navbar.js
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import React from "react";
-import { Link } from "react-router-dom"; // Import Link from React Router
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import "/Users/aditi.s/master/my-reminder-app/src/style/Navbar.css";
 
 const Navbar = () => {
+  const [activeLink, setActiveLink] = useState("/");
+
+  const handleLinkClick = (path) => {
+    setActiveLink(path);
+  };
+
   return (
     <nav>
-      <Link to="/">Home</Link> {/* Link to Home route */}
-      <Link to="/add-event">Add Event</Link> {/* Link to Add Event route */}
+      <Link
+        to="/"
+        className={activeLink === "/" ? "active" : ""}
+        onClick={() => handleLinkClick("/")}
+      >
+        Home
+      </Link>
+      <Link
+        to="/add-event"
+        className={activeLink === "/add-event" ? "active" : ""}
+        onClick={() => handleLinkClick("/add-event")}
+      >
+        Add Event
+      </Link>
     </nav>
   );
 };
