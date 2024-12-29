@@ -10,6 +10,9 @@ function App() {
   const [newEvent, setNewEvent] = useState("");
   const [newDate, setNewDate] = useState("");
   const [eventDescription, setEventDescription] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+   const [currentPage, setCurrentPage] = useState(1);
+   const eventsPerPage = 15;
 
   const onLogin = async (username, password) => {
     try {
@@ -23,16 +26,13 @@ function App() {
 
       const data = await response.json();
       if (response.ok) {
-        console.log("Login successful:", data);
-
-        // Store the token and username in localStorage
         localStorage.setItem("token", data.token);
-        localStorage.setItem("username", username); // Store the username
+        localStorage.setItem("username", username);
 
         setIsLoggedIn(true);
         alert("Login successful!");
 
-        fetchEvents(); // Fetch events after login
+        fetchEvents();
       } else {
         alert(data.message || "Login failed");
       }
@@ -42,39 +42,39 @@ function App() {
     }
   };
 
-const fetchEvents = async () => {
-  try {
-    const token = localStorage.getItem("token"); // Get token from storage
-    if (!token) {
-      throw new Error("Token not found. Please log in again.");
-    }
+  const fetchEvents = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Token not found. Please log in again.");
+      }
 
-    const response = await fetch("http://localhost:5001/api/events", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // Add Bearer token here
-      },
-    });
+      const response = await fetch("http://localhost:5001/api/events", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    const data = await response.json();
-    if (response.ok) {
-      setEvents(data); // Set events in state
-    } else {
-      alert(data.message || "Failed to fetch events");
+      const data = await response.json();
+      if (response.ok) {
+        setEvents(data);
+      } else {
+        alert(data.message || "Failed to fetch events");
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      alert(error.message || "An error occurred while fetching events.");
     }
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    alert(error.message || "An error occurred while fetching events.");
-  }
-};
+  };
 
   const handleAddEvent = async () => {
     if (newEvent && newDate && eventDescription) {
       const event = {
         eventName: newEvent,
         date: newDate,
-        description: eventDescription, // Send description as well
+        description: eventDescription,
       };
 
       try {
@@ -82,14 +82,13 @@ const fetchEvents = async () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-auth-token": localStorage.getItem("token"), // Ensure the token is included
+            "x-auth-token": localStorage.getItem("token"),
           },
           body: JSON.stringify(event),
         });
 
         const data = await response.json();
         if (response.ok) {
-          // Update the events state with the response from the server
           setEvents((prevEvents) => [...prevEvents, data]);
           setNewEvent("");
           setNewDate("");
@@ -117,7 +116,7 @@ const fetchEvents = async () => {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Use Bearer token here
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -136,9 +135,30 @@ const fetchEvents = async () => {
     }
   };
 
+  const filteredEvents = events.filter(
+    (event) =>
+      event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      new Date(event.date).toLocaleDateString().includes(searchQuery)
+  );
+  const indexOfLastEvent = currentPage * eventsPerPage;
+  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
+  const currentEvents = filteredEvents.slice(
+    indexOfFirstEvent,
+    indexOfLastEvent
+  );
+
+  const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prevPage) => prevPage + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage((prevPage) => prevPage - 1);
+  };
   useEffect(() => {
     if (isLoggedIn) {
-      fetchEvents(); // Fetch events when the user is logged in
+      fetchEvents();
     }
   }, [isLoggedIn]);
 
@@ -152,28 +172,59 @@ const fetchEvents = async () => {
         <h1>Reminder Website</h1>
         <Navbar />
 
+        <input
+          type="text"
+          placeholder="Search events by name or date"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+
         <Routes>
           <Route
             path="/"
             element={
-              <div className="events">
-                {events
-                  .sort((a, b) => new Date(a.date) - new Date(b.date))
-                  .map((event) => (
+              <div>
+                <div className="events">
+                  {currentEvents.map((event) => (
                     <div key={event._id} className="event-card">
                       <div className="event-header">
                         <span className="event-date">
                           {new Date(event.date).toLocaleDateString()}
                         </span>
+                        <span
+                          className="event-username"
+                          data-username={event.uploadedBy}
+                        >
+                          {event.uploadedBy || "Unknown"}
+                        </span>
                       </div>
                       <h3>{event.eventName}</h3>
                       <p>{event.description}</p>
-                      <p>Uploaded by: {event.uploadedBy || "Unknown"}</p>
                       <button onClick={() => handleDeleteEvent(event._id)}>
                         Delete
                       </button>
                     </div>
                   ))}
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="pagination">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             }
           />
