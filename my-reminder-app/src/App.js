@@ -11,8 +11,8 @@ function App() {
   const [newDate, setNewDate] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-   const [currentPage, setCurrentPage] = useState(1);
-   const eventsPerPage = 15;
+  const [currentPage, setCurrentPage] = useState(1);
+  const eventsPerPage = 15;
 
   const onLogin = async (username, password) => {
     try {
@@ -82,7 +82,7 @@ function App() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-auth-token": localStorage.getItem("token"),
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify(event),
         });
@@ -135,11 +135,30 @@ function App() {
     }
   };
 
+  // Group events by year and month
+  const groupedEvents = events.reduce((acc, event) => {
+    const eventDate = new Date(event.date);
+    const year = eventDate.getFullYear();
+    const month = eventDate.toLocaleString("default", { month: "long" });
+
+    if (!acc[year]) {
+      acc[year] = {};
+    }
+
+    if (!acc[year][month]) {
+      acc[year][month] = [];
+    }
+
+    acc[year][month].push(event);
+    return acc;
+  }, {});
+
   const filteredEvents = events.filter(
     (event) =>
       event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       new Date(event.date).toLocaleDateString().includes(searchQuery)
   );
+
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
   const currentEvents = filteredEvents.slice(
@@ -156,6 +175,7 @@ function App() {
   const handlePreviousPage = () => {
     if (currentPage > 1) setCurrentPage((prevPage) => prevPage - 1);
   };
+
   useEffect(() => {
     if (isLoggedIn) {
       fetchEvents();
@@ -184,25 +204,44 @@ function App() {
             path="/"
             element={
               <div>
+                {/* Display events grouped by year and month */}
                 <div className="events">
-                  {currentEvents.map((event) => (
-                    <div key={event._id} className="event-card">
-                      <div className="event-header">
-                        <span className="event-date">
-                          {new Date(event.date).toLocaleDateString()}
-                        </span>
-                        <span
-                          className="event-username"
-                          data-username={event.uploadedBy}
-                        >
-                          {event.uploadedBy || "Unknown"}
-                        </span>
-                      </div>
-                      <h3>{event.eventName}</h3>
-                      <p>{event.description}</p>
-                      <button onClick={() => handleDeleteEvent(event._id)}>
-                        Delete
-                      </button>
+                  {Object.keys(groupedEvents).map((year) => (
+                    <div key={year}>
+                      <h2>{year}</h2>
+                      {Object.keys(groupedEvents[year]).map((month) => (
+                        <div key={month}>
+                          <h3>{month}</h3>
+                          <div className="month-events">
+                            {groupedEvents[year][month].map((event) => (
+                              <div
+                                key={event._id}
+                                className="event-card"
+                                data-username={event.uploadedBy}
+                              >
+                                <div className="event-header">
+                                  <span className="event-date">
+                                    {new Date(event.date).toLocaleDateString()}
+                                  </span>
+                                  <span
+                                    className="event-username"
+                                    data-username={event.uploadedBy}
+                                  >
+                                    {event.uploadedBy || "Unknown"}
+                                  </span>
+                                </div>
+                                <h3>{event.eventName}</h3>
+                                <p>{event.description}</p>
+                                <button
+                                  onClick={() => handleDeleteEvent(event._id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

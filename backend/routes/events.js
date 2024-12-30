@@ -56,7 +56,6 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 // Delete Event
-// Delete Event
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     // Find the event by ID
@@ -69,7 +68,9 @@ router.delete("/:id", verifyToken, async (req, res) => {
 
     // Check if the event was created by the logged-in user
     if (event.createdBy.toString() !== req.user.toString()) {
-      return res.status(403).json({ message: "You do not have permission to delete this event" });
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to delete this event" });
     }
 
     // If the event was created by the logged-in user, delete it
@@ -79,4 +80,5 @@ router.delete("/:id", verifyToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 module.exports = router;
