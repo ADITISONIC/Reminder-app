@@ -135,8 +135,20 @@ function App() {
     }
   };
 
-  // Group events by year and month
-  const groupedEvents = events.reduce((acc, event) => {
+  // Filter events based on search query
+  const filteredEvents = events.filter((event) => {
+    const eventNameMatch = event.eventName
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const eventDateMatch = new Date(event.date)
+      .toLocaleDateString()
+      .includes(searchQuery);
+
+    return eventNameMatch || eventDateMatch;
+  });
+
+  // Group and sort events by year and month
+  const groupedAndSortedEvents = filteredEvents.reduce((acc, event) => {
     const eventDate = new Date(event.date);
     const year = eventDate.getFullYear();
     const month = eventDate.toLocaleString("default", { month: "long" });
@@ -153,18 +165,16 @@ function App() {
     return acc;
   }, {});
 
-  const filteredEvents = events.filter(
-    (event) =>
-      event.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      new Date(event.date).toLocaleDateString().includes(searchQuery)
-  );
-
+  // Paginate grouped events
   const indexOfLastEvent = currentPage * eventsPerPage;
   const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = filteredEvents.slice(
-    indexOfFirstEvent,
-    indexOfLastEvent
-  );
+  const currentEvents = Object.keys(groupedAndSortedEvents)
+    .flatMap((year) =>
+      Object.keys(groupedAndSortedEvents[year]).flatMap(
+        (month) => groupedAndSortedEvents[year][month]
+      )
+    )
+    .slice(indexOfFirstEvent, indexOfLastEvent);
 
   const totalPages = Math.ceil(filteredEvents.length / eventsPerPage);
 
@@ -204,49 +214,59 @@ function App() {
             path="/"
             element={
               <div>
-                {/* Display events grouped by year and month */}
                 <div className="events">
-                  {Object.keys(groupedEvents).map((year) => (
-                    <div key={year}>
-                      <h2>{year}</h2>
-                      {Object.keys(groupedEvents[year]).map((month) => (
-                        <div key={month}>
-                          <h3>{month}</h3>
-                          <div className="month-events">
-                            {groupedEvents[year][month].map((event) => (
-                              <div
-                                key={event._id}
-                                className="event-card"
-                                data-username={event.uploadedBy}
-                              >
-                                <div className="event-header">
-                                  <span className="event-date">
-                                    {new Date(event.date).toLocaleDateString()}
-                                  </span>
-                                  <span
-                                    className="event-username"
-                                    data-username={event.uploadedBy}
-                                  >
-                                    {event.uploadedBy || "Unknown"}
-                                  </span>
-                                </div>
-                                <h3>{event.eventName}</h3>
-                                <p>{event.description}</p>
-                                <button
-                                  onClick={() => handleDeleteEvent(event._id)}
-                                >
-                                  Delete
-                                </button>
+                  {Object.keys(groupedAndSortedEvents).length > 0 ? (
+                    Object.keys(groupedAndSortedEvents).map((year) => (
+                      <div key={year}>
+                        <h2>{year}</h2>
+                        {Object.keys(groupedAndSortedEvents[year]).map(
+                          (month) => (
+                            <div key={month}>
+                              <h3>{month}</h3>
+                              <div className="month-events">
+                                {groupedAndSortedEvents[year][month].map(
+                                  (event) => (
+                                    <div
+                                      key={event._id}
+                                      className="event-card"
+                                      data-username={event.uploadedBy}
+                                    >
+                                      <div className="event-header">
+                                        <span className="event-date">
+                                          {new Date(
+                                            event.date
+                                          ).toLocaleDateString()}
+                                        </span>
+                                        <span
+                                          className="event-username"
+                                          data-username={event.uploadedBy}
+                                        >
+                                          {event.uploadedBy || "Unknown"}
+                                        </span>
+                                      </div>
+                                      <h3>{event.eventName}</h3>
+                                      <p>{event.description}</p>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteEvent(event._id)
+                                        }
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )
+                                )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <p>No events found matching your search criteria.</p>
+                  )}
                 </div>
 
-                {/* Pagination Controls */}
                 <div className="pagination">
                   <button
                     onClick={handlePreviousPage}
