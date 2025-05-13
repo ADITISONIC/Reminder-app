@@ -33,7 +33,7 @@ app.get("*", (req, res) => {
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/reminder", {
+  .connect("mongodb://localhost:27017/reminder", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -45,3 +45,4 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+//mongodb://localhost:27017/reminder

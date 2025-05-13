@@ -14,7 +14,7 @@
   background-color: #237cfa;
 }
 
-.event-card[data-username="Prathish"] {
+.event-card[data-username="Prathish1"] {
   background-color: #028a0f;
 }
 
@@ -48,7 +48,7 @@
   background-color: #f9f9f9;
 }
 
-.event-username[data-username="Prathish"] {
+.event-username[data-username="Prathish1"] {
   background-color: #f9f9f9;
 }
 /* Global Styles */
@@ -57,7 +57,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: white;
-  color: #333;
+  color: #f9f9f9;
 }
 
 .app {
@@ -176,7 +176,7 @@ h1 {
 /* Button */
 button {
   padding: 10px 15px;
-  background-color: #237cfa;
+  background-color: #028a0f;
   color: white;
   border: none;
   border-radius: 5px;
@@ -185,7 +185,7 @@ button {
 }
 
 button:hover {
-  background-color: #028a0f;
+  background-color:#237cfa ;
 }
 
 /* Animations */
