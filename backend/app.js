@@ -24,10 +24,9 @@ const eventRoutes = require("./routes/events");
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 // Serve React build from my-remind-app/build
-app.use(express.static(path.join(__dirname, "../my-remind-app/build")));
-
+app.use(express.static(path.join(__dirname, "../my-reminder-app/build")));
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../my-remind-app/build", "index.html"));
+  res.sendFile(path.join(__dirname, "../my-reminder-app/build", "index.html"));
 });
 // MongoDB connection
 mongoose
