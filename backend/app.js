@@ -14,7 +14,7 @@ app.use(cors());
 
 app.use(
   cors({
-    origin: "http://localhost:3000", // Allow requests from your frontend's URL
+    origin: `${import.meta.env.CLIENT_BASE_URL}`, // Allow requests from your frontend's URL
     methods: ["GET", "POST", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
