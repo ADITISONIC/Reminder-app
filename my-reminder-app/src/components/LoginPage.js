@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "/Users/aditi.s/master/my-reminder-app/src/style/Login.css";
+import "../style/Login.css"
 
 const LoginPage = ({ onLogin }) => {
   const [username, setUsername] = useState("");

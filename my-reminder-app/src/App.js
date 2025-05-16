@@ -16,7 +16,7 @@ function App() {
 
   const onLogin = async (username, password) => {
     try {
-      const response = await fetch("http://localhost:5001/api/auth/login", {
+      const response = await fetch(`${import.meta.env.API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,7 +49,7 @@ function App() {
         throw new Error("Token not found. Please log in again.");
       }
 
-      const response = await fetch("http://localhost:5001/api/events", {
+      const response = await fetch(`${import.meta.env.API_URL}/api/events`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -78,14 +78,17 @@ function App() {
       };
 
       try {
-        const response = await fetch("http://localhost:5001/api/events/add", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(event),
-        });
+        const response = await fetch(
+          `${import.meta.env.API_URL}/api/events/add`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify(event),
+          }
+        );
 
         const data = await response.json();
         if (response.ok) {
@@ -112,13 +115,16 @@ function App() {
         throw new Error("Token not found. Please log in again.");
       }
 
-      const response = await fetch(`http://localhost:5001/api/events/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.API_URL}/api/events/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {

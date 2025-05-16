@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5001/api/auth"; // Update with your backend URL
+const API_URL = `${import.meta.env.API_URL}/api/auth`; // Update with your backend URL
 
 export const getEvents = () => {
   return axios.get(API_URL);

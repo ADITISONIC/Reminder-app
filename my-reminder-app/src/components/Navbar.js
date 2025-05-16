@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import "/Users/aditi.s/master/my-reminder-app/src/style/Navbar.css";
+import "../style/Navbar.css";
 
 const Navbar = () => {
   const [activeLink, setActiveLink] = useState("/");
