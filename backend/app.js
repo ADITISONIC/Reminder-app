@@ -4,24 +4,22 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
 
-
 dotenv.config();
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
-
 app.use(
   cors({
-    origin: `${import.meta.env.CLIENT_BASE_URL}`, // Allow requests from your frontend's URL
+    origin: process.env.CLIENT_BASE_URL,
     methods: ["GET", "POST", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 // Routes
-const authRoutes = require("./routes/auth").router; // Ensure you're accessing the router from the auth module
-const eventRoutes = require("./routes/events"); // Assuming `events.js` exports a router
+const authRoutes = require("./routes/auth").router;
+const eventRoutes = require("./routes/events");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
@@ -45,4 +43,3 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-//mongodb://localhost:27017/reminder
